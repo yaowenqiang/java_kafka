@@ -10,6 +10,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.StreamCorruptedException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,7 +30,7 @@ public class ConsumerDemoWithThread {
         String bootstrapServers = "127.0.0.1:9092";
         String groupId = "my-six-application";
         String topic = "first";
-        CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch = new CountDownLatch(1);
         logger.info("Creating the consumer");
         final ConsumerRunnable myConsumerRunnable = new ConsumerRunnable(bootstrapServers, groupId, topic, latch);
 
@@ -41,6 +42,12 @@ public class ConsumerDemoWithThread {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             logger.info("Caught shutdown hook");
             myConsumerRunnable.shutdown();
+            try {
+               latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            logger.info("Application has exited");
         }));
 
         try {

@@ -28,8 +28,12 @@ public class ProducerDemo {
 
         //create a producer record
 
-        ProducerRecord<String, String> record = new ProducerRecord<String, String>("first topic", "hello world");
+        ProducerRecord<String, String> record = new ProducerRecord<String, String>("first", "hello world");
 
         producer.send(record);
+
+        //flush
+//        producer.flush();
+//        producer.close();
     }
 }

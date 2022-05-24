@@ -8,13 +8,23 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class ElasticSearchConsumer {
 
 
-    public static RestClient createClient() {
+    public static RestHighLevelClient createClient() {
         //https://:gtf0fkw9eo@
         String hostname = "kafka-demo-729430487.us-east-1.bonsaisearch.net:443";
         String username = "1v6zobwo9i";
@@ -24,7 +34,7 @@ public class ElasticSearchConsumer {
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(username, password));
 
-        RestClientBuilder builder = RestClient.builder(
+        RestClientBuilder builder =  RestClient.builder(
                 new HttpHost(hostname, 443, "https"))
                 .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
                     public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder) {
@@ -32,17 +42,25 @@ public class ElasticSearchConsumer {
                     }
                 });
 
-        RestClient client = new RestClient(builder);
+        RestHighLevelClient client = new RestHighLevelClient(builder);
         return client;
 
     }
-    public static void main(String[] args) {
-        RestClient = createClient();
-        SearchResponse<Product> search = client.search(s -> s
-        .index("products")
-        .query(q -> q
-        .term(t -> t
-        .field("name")
-        .value(v-> v.stringValue("bicycle")))));
+    public static void main(String[] args) throws IOException {
+        Logger logger = LoggerFactory.getLogger(ElasticSearchConsumer.class.getName());
+        String jsonString = "{\"foo\":\"bar\"}";
+        RestHighLevelClient client = createClient();
+        IndexRequest request = new IndexRequest(
+                "twitter",
+                "tweets",
+        ).source(jsonString, XContentType.JSON);
+
+        IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
+
+        String id = indexResponse.getId();
+
+        logger.info(id);
+
+        client.close();
     }
 }

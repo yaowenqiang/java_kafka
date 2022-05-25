@@ -1,7 +1,6 @@
 package com.jacky.kafka;
 
 
-import jdk.javadoc.internal.doclets.formats.html.IndexRedirectWriter;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -52,7 +51,7 @@ public class ElasticSearchConsumer {
         RestHighLevelClient client = createClient();
         IndexRequest request = new IndexRequest(
                 "twitter",
-                "tweets",
+                "tweets"
         ).source(jsonString, XContentType.JSON);
 
         IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);

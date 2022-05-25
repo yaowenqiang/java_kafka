@@ -25,16 +25,16 @@ public class ElasticSearchConsumer {
 
     public static RestHighLevelClient createClient() {
         //https://:gtf0fkw9eo@
-        String hostname = "kafka-demo-729430487.us-east-1.bonsaisearch.net:443";
-        String username = "1v6zobwo9i";
-        String password = "gtf0fkw9eo";
+        String hostname = "localhost";
+        String username = "";
+        String password = "";
 
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY,
                 new UsernamePasswordCredentials(username, password));
 
         RestClientBuilder builder =  RestClient.builder(
-                new HttpHost(hostname, 443, "https"))
+                new HttpHost(hostname, 9200, "http"))
                 .setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
                     public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder) {
                         return httpAsyncClientBuilder.setDefaultCredentialsProvider(credentialsProvider);

@@ -98,11 +98,14 @@ public class ElasticSearchConsumer {
 //                logger.info("Key:" + record.key() + " , value: " + record.value());
 //                logger.info("Partition:" + record.partition() + " , Offset: " + record.offset());
 
+                // Kafka generic ID
+                String id = record.topic() +  "_" + record.partition() + "_" + record.offset();
                 String jsonString = record.value();
 
                 IndexRequest request = new IndexRequest(
                         "twitter",
-                        "tweets"
+                        "tweets",
+                        id
                 ).source(jsonString, XContentType.JSON);
 
                 IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
@@ -122,4 +125,5 @@ public class ElasticSearchConsumer {
 //        client.close();
 
     }
+    // gson
 }

@@ -12,6 +12,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -68,7 +70,7 @@ public class ElasticSearchConsumer {
 //        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"); // disable auto commit of offsets
-        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "10");
+        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "100");
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
         consumer.subscribe(Arrays.asList(topic));
@@ -95,7 +97,11 @@ public class ElasticSearchConsumer {
 
         while(true) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
-            logger.info("Received " + records.count() + "records");
+            Integer recordCount = records.count();
+            logger.info("Received " + recordCount + "records");
+
+            BulkRequest bulkRequest = new BulkRequest();
+
             for(ConsumerRecord<String, String> record : records) {
                 //insert data into elasticsearch
 //                logger.info("Key:" + record.key() + " , value: " + record.value());
@@ -111,27 +117,33 @@ public class ElasticSearchConsumer {
                         id
                 ).source(jsonString, XContentType.JSON);
 
-                IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
+                bulkRequest.add(request);
 
-                id = indexResponse.getId();
 
-                logger.info(id);
+//                IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
+//
+//                id = indexResponse.getId();
+//
+//                logger.info(id);
 
+//                try {
+//                    Thread.sleep(100);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+            }
+
+            if(recordCount > 0) {
+                BulkResponse bulkItemResponses = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+                logger.info("Committing offsets...");
+                consumer.commitSync();
+                logger.info("Offsets  have been committed.");
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }
 
-            logger.info("Committing offsets...");
-            consumer.commitSync();
-            logger.info("Offsets  have been committed.");
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
 

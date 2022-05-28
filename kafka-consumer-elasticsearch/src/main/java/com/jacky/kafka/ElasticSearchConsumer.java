@@ -67,6 +67,8 @@ public class ElasticSearchConsumer {
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
 //        properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
         properties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        properties.setProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"); // disable auto commit of offsets
+        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "10");
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
         consumer.subscribe(Arrays.asList(topic));
@@ -93,6 +95,7 @@ public class ElasticSearchConsumer {
 
         while(true) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+            logger.info("Received " + records.count() + "records");
             for(ConsumerRecord<String, String> record : records) {
                 //insert data into elasticsearch
 //                logger.info("Key:" + record.key() + " , value: " + record.value());
@@ -110,15 +113,25 @@ public class ElasticSearchConsumer {
 
                 IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
 
-                String id = indexResponse.getId();
+                id = indexResponse.getId();
 
                 logger.info(id);
 
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }
+
+            logger.info("Committing offsets...");
+            consumer.commitSync();
+            logger.info("Offsets  have been committed.");
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
